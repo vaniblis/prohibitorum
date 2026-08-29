@@ -1,0 +1,223 @@
+/* Shared design tokens. The palette is Okabe–Ito based so status colors remain distinguishable. */
+:root {
+  --accent: #0072b2;
+  --accent-bright: #39a9e8;
+  --ok: #009e73;
+  --warn: #e69f00;
+  --danger: #d55e00;
+  --bg: #0f1419;
+  --panel: #1c2128;
+  --panel-soft: #242b33;
+  --text: #e6edf3;
+  --muted: #8b949e;
+  --line: #343d48;
+  --focus: #f0e442;
+  --shadow: 0 22px 60px rgba(0, 0, 0, .28);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color-scheme: dark;
+}
+
+/* Document foundations and the non-JavaScript visual shell. */
+* { box-sizing: border-box; }
+
+/* Visually hidden text remains available to screen readers and other text consumers. */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 10% 0%, rgba(0, 114, 178, .2), transparent 32rem),
+    linear-gradient(180deg, #101820 0%, var(--bg) 50%);
+}
+
+button, input, textarea, select { font: inherit; }
+button, a { -webkit-tap-highlight-color: transparent; }
+a { color: #74c7f5; }
+a:hover { color: #b7e5ff; }
+
+/* Accessibility: normally hidden, but immediately visible when reached by keyboard. */
+.skip-link {
+  position: fixed;
+  top: .75rem;
+  left: .75rem;
+  z-index: 20;
+  padding: .65rem .9rem;
+  border-radius: .5rem;
+  background: var(--text);
+  color: var(--bg);
+  transform: translateY(-150%);
+}
+.skip-link:focus { transform: translateY(0); }
+
+/* Center the app at a readable measure; the masthead remains outside workflow panels. */
+.shell { width: min(900px, calc(100% - 2rem)); margin: 0 auto; padding: 4rem 0 2rem; }
+.masthead { display: flex; gap: 1rem; align-items: flex-start; margin: 0 0 2rem; }
+.brand-mark {
+  display: grid;
+  place-items: center;
+  flex: 0 0 3.25rem;
+  height: 3.25rem;
+  border-radius: 1rem;
+  background: linear-gradient(145deg, var(--accent-bright), var(--accent));
+  box-shadow: 0 10px 28px rgba(0, 114, 178, .35);
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 850;
+}
+h1, h2 { margin: 0; letter-spacing: -.025em; }
+h1 { font-size: clamp(1.7rem, 5vw, 2.55rem); line-height: 1.05; }
+h2 { font-size: clamp(1.4rem, 4vw, 2rem); }
+p { line-height: 1.55; }
+.eyebrow, .step { margin: 0 0 .35rem; color: var(--accent-bright); font-weight: 750; letter-spacing: .08em; text-transform: uppercase; font-size: .75rem; }
+.lede { margin: .55rem 0 0; color: var(--muted); max-width: 48rem; }
+
+/* Every workflow screen reuses this panel surface; hidden is controlled by setScreen(). */
+.panel {
+  padding: clamp(1.2rem, 4vw, 2.25rem);
+  border: 1px solid var(--line);
+  border-radius: 1.1rem;
+  background: rgba(28, 33, 40, .94);
+  box-shadow: var(--shadow);
+}
+.screen[hidden], [hidden] { display: none !important; }
+.section-heading { margin-bottom: 1.4rem; }
+.section-heading > p:last-child { margin: .5rem 0 0; color: var(--muted); }
+.stack { display: grid; gap: .75rem; }
+.stack label:not(.choice), legend { font-weight: 720; }
+.muted, .hint { color: var(--muted); }
+.hint { margin: 0; font-size: .9rem; }
+
+/* Form controls intentionally use native semantics with a consistent high-contrast skin. */
+input, textarea, select {
+  width: 100%;
+  border: 1px solid #46515e;
+  border-radius: .65rem;
+  padding: .78rem .85rem;
+  background: #111820;
+  color: var(--text);
+  outline: none;
+}
+textarea { resize: vertical; min-height: 6rem; }
+input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible, .screen h2:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+input[type="checkbox"], input[type="radio"] { width: 1.05rem; height: 1.05rem; accent-color: var(--accent-bright); }
+fieldset { display: grid; gap: .55rem; margin: .4rem 0; padding: 1rem; border: 1px solid var(--line); border-radius: .8rem; }
+legend { padding: 0 .35rem; }
+.choice { display: flex; gap: .65rem; align-items: flex-start; cursor: pointer; }
+.choice input { flex: 0 0 auto; margin-top: .18rem; }
+.destructive-choice { color: #ffd2c2; }
+.subpanel { padding: 1rem; border-radius: .8rem; background: var(--panel-soft); border: 1px solid var(--line); }
+
+/* Buttons and link-buttons share interaction and focus behavior. */
+.button {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: .7rem 1rem;
+  border: 1px solid transparent;
+  border-radius: .7rem;
+  cursor: pointer;
+  text-decoration: none;
+  font-weight: 760;
+  transition: transform .12s ease, background .12s ease, border-color .12s ease;
+}
+.button:hover:not(:disabled) { transform: translateY(-1px); }
+.button:disabled { opacity: .52; cursor: not-allowed; }
+.button.primary { background: var(--accent); color: white; }
+.button.primary:hover:not(:disabled) { background: #0b82c4; color: white; }
+.button.quiet { border-color: var(--line); background: #252d36; color: var(--text); }
+.button.quiet:hover:not(:disabled) { border-color: #5b6978; background: #2d3742; }
+.danger-text { color: #ff9c78 !important; }
+.button-row, .footer-actions { display: flex; flex-wrap: wrap; gap: .7rem; }
+.footer-actions { justify-content: space-between; margin-top: 1.25rem; }
+.centered-row { justify-content: center; }
+
+/* Persistent notices, privacy disclosure, and saved-run recovery share one visual language. */
+.banner, .notice, .resume-box {
+  margin: 0 0 1rem;
+  padding: .9rem 1rem;
+  border: 1px solid #335e76;
+  border-radius: .75rem;
+  background: #152b38;
+}
+.notice.warning { border-color: #795d1d; background: #332a16; }
+.notice.privacy { border-color: #3d4d5f; background: #17212b; }
+.resume-box { margin-bottom: 1.3rem; }
+.resume-box p { margin-top: 0; }
+.field-error { margin: 0; color: #ffab8d; }
+.account-row { display: flex; justify-content: space-between; gap: 1rem; align-items: center; border-bottom: 1px solid var(--line); margin: -1rem 0 1.5rem; padding-bottom: 1rem; }
+.account-row p { margin: 0; }
+
+/* Loading and terminal-state presentation. */
+.centered { text-align: center; }
+.centered .button { margin-inline: auto; }
+.spinner { width: 2.4rem; height: 2.4rem; margin: 0 auto 1rem; border: .25rem solid #344150; border-top-color: var(--accent-bright); border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+/* Respect reduced-motion preferences across both authored and browser-default motion. */
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .001ms !important; transition-duration: .001ms !important; } }
+
+/* Candidate review: rows are appended in chunks, and filtered rows stay in the DOM. */
+.toolbar { display: grid; grid-template-columns: minmax(12rem, 1fr) auto; gap: .65rem 1rem; align-items: end; margin: 1.25rem 0 .8rem; }
+.toolbar label { grid-column: 1 / -1; font-weight: 720; }
+.preview-list { max-height: 31rem; overflow: auto; border: 1px solid var(--line); border-radius: .8rem; background: #111820; }
+/* Fixed checkbox/avatar tracks leave the final text track free to truncate safely. */
+.account-item { display: grid; grid-template-columns: auto 1.5rem minmax(0, 1fr); gap: .7rem; align-items: center; padding: .7rem .8rem; border-bottom: 1px solid #27313b; cursor: pointer; }
+.account-item:last-child { border-bottom: 0; }
+.account-item:hover { background: #18232d; }
+.account-item.is-filtered { display: none; }
+.account-avatar, .avatar-placeholder { width: 24px; height: 24px; border-radius: 50%; background: #344150; object-fit: cover; }
+.account-copy { min-width: 0; text-align: left; }
+.account-handle { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 720; }
+.account-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: .85rem; }
+.account-note { display: block; color: #ffc08f; font-size: .78rem; font-weight: 720; }
+
+/* Native progress avoids runtime style attributes, keeping the strict content policy intact. */
+.progress { appearance: none; width: 100%; height: .85rem; overflow: hidden; margin: 1.3rem 0 .8rem; border-radius: 999px; background: #0d1218; border: 1px solid var(--line); }
+.progress::-webkit-progress-bar { background: #0d1218; }
+.progress::-webkit-progress-value { background: linear-gradient(90deg, var(--accent), var(--accent-bright)); }
+.progress::-moz-progress-bar { background: linear-gradient(90deg, var(--accent), var(--accent-bright)); }
+.countdown { font-variant-numeric: tabular-nums; font-size: 1.2rem; font-weight: 760; }
+/* Terminal-state glyphs supplement text; color is never the sole status indicator. */
+.state-glyph { display: grid; place-items: center; width: 3.3rem; height: 3.3rem; margin: 0 auto 1rem; border-radius: 50%; font-size: 1.6rem; font-weight: 850; }
+.success-glyph { color: #d9fff3; background: rgba(0, 158, 115, .25); border: 1px solid var(--ok); }
+.warning-glyph { color: #fff1c2; background: rgba(230, 159, 0, .2); border: 1px solid var(--warn); }
+.error-glyph { color: #ffe0d4; background: rgba(213, 94, 0, .2); border: 1px solid var(--danger); }
+.page-footer { width: min(900px, calc(100% - 2rem)); margin: 0 auto; padding: 0 0 2.5rem; color: var(--muted); text-align: center; font-size: .85rem; }
+
+/* On narrow screens actions become full-width and the layout remains touch friendly. */
+@media (max-width: 620px) {
+  .shell { width: min(100% - 1rem, 900px); padding-top: 1.5rem; }
+  .masthead { padding: 0 .35rem; }
+  .brand-mark { flex-basis: 2.65rem; height: 2.65rem; border-radius: .8rem; }
+  .panel { border-radius: .85rem; }
+  .toolbar { grid-template-columns: 1fr; }
+  .toolbar label { grid-column: auto; }
+  .footer-actions > * { flex: 1 1 100%; }
+  .account-row { align-items: flex-start; }
+}
+
+/* Preserve boundaries and native control affordances in Windows High Contrast mode. */
+@media (forced-colors: active) {
+  .panel, .subpanel, .notice, .banner, .resume-box, .preview-list, .account-item, .button {
+    border-color: CanvasText;
+  }
+  .button.primary { background: ButtonFace; color: ButtonText; }
+  .spinner { border-color: GrayText; border-top-color: Highlight; }
+  .state-glyph { border-color: CanvasText; }
+  .progress { forced-color-adjust: auto; }
+}

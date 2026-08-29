@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <!--
+    The page is deliberately self-contained. The content policy permits this app's
+    own script/style, Bluesky API requests, and Bluesky avatar images—and nothing else.
+  -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src https://cdn.bsky.app; connect-src https://bsky.social; base-uri 'none'; form-action 'none'">
+  <title>Bluesky Moderation List Builder</title>
+  <meta name="description" content="Build a Bluesky moderation list from a profile audience or post engagement.">
+  <link rel="stylesheet" href="./style.css">
+  <script defer src="./app.js"></script>
+</head>
+<body>
+  <!-- Keyboard users can bypass the branding and move directly to the active workflow. -->
+  <a id="skip-link" class="skip-link" href="#app-main">Skip to the app</a>
+  <main id="app-main" class="shell" tabindex="-1">
+    <!-- Shared product heading; JavaScript only changes the workflow sections below. -->
+    <header class="masthead">
+      <div class="brand-mark" aria-hidden="true">B</div>
+      <div>
+        <p class="eyebrow">Personal moderation utility</p>
+        <h1>Bluesky Moderation List Builder</h1>
+        <p class="lede">Turn an audience or a post’s engagement into a carefully reviewed moderation list.</p>
+      </div>
+    </header>
+
+    <div id="global-banner" class="banner" role="status" aria-live="polite" aria-atomic="true" hidden></div>
+
+    <!-- Screen 1: credentials exist only in the JavaScript closure and are never persisted. -->
+    <section id="screen-auth" class="panel screen" aria-labelledby="auth-title">
+      <div class="section-heading">
+        <p class="step">Step 1 of 3</p>
+        <h2 id="auth-title">Sign in locally</h2>
+        <p>Your credential stays in this tab and is never saved.</p>
+      </div>
+      <form id="login-form" class="stack" novalidate>
+        <label for="handle-input">Bluesky handle</label>
+        <input id="handle-input" name="handle" type="text" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="name.bsky.social" aria-errormessage="auth-error" required>
+        <label for="password-input">App password</label>
+        <input id="password-input" name="password" type="password" autocomplete="new-password" autocapitalize="off" spellcheck="false" placeholder="xxxx-xxxx-xxxx-xxxx" aria-describedby="password-help" aria-errormessage="auth-error" required>
+        <p id="password-help" class="hint">Use a dedicated app password, never your main password. <a href="https://bsky.app/settings/app-passwords" rel="noopener noreferrer" target="_blank">Create one in Bluesky settings<span class="sr-only"> (opens in a new tab)</span></a>.</p>
+        <p id="auth-error" class="field-error" role="alert" hidden></p>
+        <button id="login-btn" class="button primary" type="submit">Sign in</button>
+      </form>
+    </section>
+
+    <!-- Screen 2: choose the source audience and either a new or existing destination list. -->
+    <section id="screen-target" class="panel screen" aria-labelledby="target-title" hidden>
+      <div class="account-row">
+        <p id="signed-in-text"></p>
+        <button id="logout-btn" class="button quiet" type="button">Sign out</button>
+      </div>
+      <!-- Appears only when a validated, non-expired run exists for this signed-in DID. -->
+      <div id="resume-box" class="resume-box" role="region" aria-label="Unfinished saved run" hidden>
+        <p id="resume-copy"></p>
+        <div class="button-row">
+          <button id="resume-saved-btn" class="button primary" type="button">Resume</button>
+          <button id="discard-saved-btn" class="button quiet danger-text" type="button">Discard</button>
+        </div>
+      </div>
+      <div class="section-heading">
+        <p class="step">Step 2 of 3</p>
+        <h2 id="target-title">Choose a source and destination</h2>
+      </div>
+      <div class="stack">
+        <label for="target-input">Profile, post URL, handle, or DID</label>
+        <input id="target-input" type="text" autocapitalize="off" spellcheck="false" placeholder="alice.bsky.social" aria-errormessage="target-error">
+        <!-- Native fieldsets keep related choices understandable without JavaScript. -->
+        <fieldset>
+          <legend>List operation</legend>
+          <label class="choice"><input id="op-create" type="radio" name="operation" value="create" aria-controls="create-fields append-fields" checked> Create a new moderation list</label>
+          <label class="choice"><input id="op-append" type="radio" name="operation" value="append" aria-controls="create-fields append-fields"> Add to an existing moderation list</label>
+        </fieldset>
+        <div id="create-fields" class="subpanel stack">
+          <label for="list-name">List name <span class="muted">(64 UTF-8 bytes maximum)</span></label>
+          <input id="list-name" type="text" maxlength="64" placeholder="Example moderation list" aria-errormessage="target-error">
+          <label for="list-desc">Description <span class="muted">(optional)</span></label>
+          <textarea id="list-desc" rows="3" placeholder="Why this list exists" aria-errormessage="target-error"></textarea>
+        </div>
+        <div id="append-fields" class="subpanel stack" hidden>
+          <label for="list-select">Moderation list</label>
+          <select id="list-select" aria-errormessage="target-error"><option value="">Choose a list</option></select>
+          <p id="list-load-status" class="hint" role="status" aria-live="polite" aria-atomic="true"></p>
+        </div>
+        <fieldset>
+          <legend>Action when activated</legend>
+          <label class="choice"><input id="action-block" type="radio" name="action" value="block" checked> Block accounts on the list</label>
+          <label class="choice"><input id="action-mute" type="radio" name="action" value="mute"> Mute accounts on the list</label>
+        </fieldset>
+        <label id="subscribe-label" class="choice"><input id="subscribe-check" type="checkbox" checked> Activate this list when the build finishes</label>
+        <label class="choice"><input id="exclude-target" type="checkbox" checked> Exclude the target profile</label>
+        <label class="choice destructive-choice"><input id="unfollow-followed" type="checkbox" aria-describedby="unfollow-help"> Include accounts I already follow and unfollow them when they are added</label>
+        <p id="unfollow-help" class="hint">This is optional. When enabled, unfollowing and adding each account happen together in one Bluesky write batch.</p>
+        <p id="target-error" class="field-error" role="alert" hidden></p>
+        <button id="fetch-btn" class="button primary" type="button">Find accounts</button>
+      </div>
+    </section>
+
+    <!-- Fetching is cancellable. Partial harvest results are intentionally discarded. -->
+    <section id="screen-fetching" class="panel screen centered" aria-labelledby="fetching-title" hidden>
+      <div class="spinner" aria-hidden="true"></div>
+      <h2 id="fetching-title">Gathering accounts</h2>
+      <p id="fetch-count" role="status" aria-live="polite" aria-atomic="true">Connecting to Bluesky…</p>
+      <button id="cancel-fetch-btn" class="button quiet" type="button">Cancel</button>
+    </section>
+
+    <!-- Screen 3: safety-filtered candidates remain editable before any record is written. -->
+    <section id="screen-preview" class="panel screen" aria-labelledby="preview-title" aria-describedby="preview-summary" hidden>
+      <div class="section-heading">
+        <p class="step">Step 3 of 3</p>
+        <h2 id="preview-title">Review the accounts</h2>
+        <p id="preview-summary"></p>
+        <p id="preview-estimate" class="hint"></p>
+      </div>
+      <div id="active-list-warning" class="notice warning" role="note" aria-label="Active list warning" hidden></div>
+      <div id="unfollow-warning" class="notice warning" role="note" aria-label="Unfollow warning" hidden></div>
+      <!-- This disclosure stays adjacent to the final review rather than sign-in. -->
+      <div class="notice privacy" role="note" aria-label="Privacy information"><strong>Privacy:</strong> The list, its members, and a block subscription are public Bluesky records — anyone can see them. Muting a list is private to your account. Saved progress (the pending account list) is stored unencrypted in this browser until the run finishes.</div>
+      <div class="toolbar">
+        <label for="filter-input">Filter accounts</label>
+        <input id="filter-input" type="search" placeholder="Handle or display name" aria-describedby="filter-status">
+        <p id="filter-status" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
+        <div class="button-row">
+          <button id="select-shown-btn" class="button quiet" type="button">Select shown</button>
+          <button id="deselect-shown-btn" class="button quiet" type="button">Deselect shown</button>
+        </div>
+      </div>
+      <p id="selection-status" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
+      <div id="preview-list" class="preview-list" role="list" aria-label="Accounts to add" aria-busy="true"></div>
+      <div class="footer-actions">
+        <button id="back-btn" class="button quiet" type="button">Back</button>
+        <button id="execute-btn" class="button primary" type="button">Add 0 accounts to list</button>
+      </div>
+    </section>
+
+    <!-- Write progress and pause controls; pausing takes effect between atomic batches. -->
+    <section id="screen-executing" class="panel screen centered" aria-labelledby="executing-title" aria-describedby="status" hidden>
+      <p class="step">Writing safely</p>
+      <h2 id="executing-title">Building your list</h2>
+      <progress id="progress" class="progress" aria-label="Build progress" max="100" value="0">0%</progress>
+      <p id="status" role="status" aria-live="polite" aria-atomic="true">Preparing…</p>
+      <button id="pause-btn" class="button quiet" type="button">Pause after this batch</button>
+    </section>
+
+    <!-- Used for manual pauses, connectivity failures, and non-overridable rate waits. -->
+    <section id="screen-paused" class="panel screen centered" aria-labelledby="paused-title" aria-describedby="pause-reason pause-persistence" hidden>
+      <div class="state-glyph warning-glyph" aria-hidden="true">⚠</div>
+      <h2 id="paused-title">Build paused</h2>
+      <p id="pause-reason"></p>
+      <p id="countdown" class="countdown" role="timer"></p>
+      <p id="pause-persistence" class="hint"></p>
+      <button id="resume-btn" class="button primary" type="button">Resume</button>
+    </section>
+
+    <!-- Completion is shown only after membership is reconciled; activation may be retried. -->
+    <section id="screen-done" class="panel screen centered" aria-labelledby="done-title" aria-describedby="done-counts done-subscription" hidden>
+      <div class="state-glyph success-glyph" aria-hidden="true">✔</div>
+      <h2 id="done-title">List ready</h2>
+      <p id="done-counts"></p>
+      <p id="done-subscription" class="field-error" role="alert" hidden></p>
+      <div class="button-row centered-row">
+        <a id="list-link" class="button primary" rel="noopener noreferrer" target="_blank">Open list on Bluesky<span class="sr-only"> (opens in a new tab)</span></a>
+        <button id="retry-subscribe-btn" class="button quiet" type="button" hidden>Retry activation</button>
+        <button id="again-btn" class="button quiet" type="button">Build another</button>
+      </div>
+    </section>
+
+    <!-- Terminal errors retain a safe back destination chosen by the controller. -->
+    <section id="screen-error" class="panel screen centered" aria-labelledby="error-title" aria-describedby="error-text" hidden>
+      <div class="state-glyph error-glyph" aria-hidden="true">✖</div>
+      <h2 id="error-title">Something needs attention</h2>
+      <p id="error-text" role="alert"></p>
+      <button id="error-back-btn" class="button quiet" type="button">Go back</button>
+    </section>
+  </main>
+  <!-- A visible reminder of the trust model: there is no application server. -->
+  <footer class="page-footer">Runs entirely in your browser. No analytics, backend, or third-party scripts.</footer>
+</body>
+</html>
