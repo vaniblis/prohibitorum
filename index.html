@@ -8,9 +8,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark light">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src https://cdn.bsky.app; connect-src https://bsky.social; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; script-src-elem 'self'; script-src-attr 'none'; style-src 'self'; style-src-elem 'self'; style-src-attr 'none'; img-src 'self' https://cdn.bsky.app; connect-src https://bsky.social; base-uri 'none'; form-action 'none'; object-src 'none'">
   <title>Bluesky Moderation List Builder</title>
   <meta name="description" content="Build a Bluesky moderation list from a profile audience or post engagement.">
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./style.css">
   <script defer src="./app.js"></script>
 </head>
